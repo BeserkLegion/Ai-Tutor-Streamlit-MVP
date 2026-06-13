@@ -3,7 +3,6 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from datetime import datetime
 from openai import OpenAI
-import os
 import json
 import random
 
@@ -20,10 +19,8 @@ def get_google_client():
         "https://www.googleapis.com/auth/drive"
     ]
 
-    creds_dict = json.loads(st.secrets["GOOGLE_CREDENTIALS"])
-
     creds = ServiceAccountCredentials.from_json_keyfile_dict(
-        creds_dict,
+        st.secrets["gcp_service_account"],
         scope
     )
 
