@@ -24,9 +24,10 @@ st.markdown("""
             font-family: 'Inter', sans-serif;
         }
 
-        /* Dark background */
+        /* Dark metallic background */
         .stApp {
-            background-color: #1C1C1C;
+            background: linear-gradient(160deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
         }
 
         /* Hide streamlit default header */
@@ -34,213 +35,394 @@ st.markdown("""
             background: transparent;
         }
 
-        /* Animated header */
+        /* Remove red error outlines globally */
+        .stTextInput > div > div > input:invalid,
+        .stTextArea > div > div > textarea:invalid {
+            box-shadow: none !important;
+            border-color: #3A3A3A !important;
+        }
+
+        /* Remove streamlit default focus red */
+        .stTextInput > div[data-focused="true"] > div,
+        .stTextArea > div[data-focused="true"] > div {
+            border-color: #6ABF1E !important;
+            box-shadow: none !important;
+        }
+
+        /* Animated metallic header */
         .ias-header {
-            background: linear-gradient(135deg, #6ABF1E 0%, #3d7a0a 100%);
-            padding: 30px 20px;
+            background: linear-gradient(
+                135deg,
+                #3a7a0a 0%,
+                #6ABF1E 30%,
+                #8fd44e 50%,
+                #6ABF1E 70%,
+                #3a7a0a 100%
+            );
+            background-size: 200% auto;
+            animation: shimmer 4s linear infinite, fadeInDown 0.6s ease;
+            padding: 32px 20px;
             border-radius: 16px;
             text-align: center;
             margin-bottom: 24px;
-            box-shadow: 0 8px 32px rgba(106, 191, 30, 0.3);
-            animation: fadeInDown 0.6s ease;
+            box-shadow:
+                0 8px 32px rgba(106, 191, 30, 0.4),
+                inset 0 1px 0 rgba(255,255,255,0.2),
+                inset 0 -1px 0 rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.15);
         }
 
         .ias-header h1 {
             color: white;
-            font-size: 2.2rem;
+            font-size: 2.4rem;
             font-weight: 900;
             margin: 0;
             letter-spacing: -0.5px;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.4);
         }
 
         .ias-header p {
-            color: rgba(255,255,255,0.85);
+            color: rgba(255,255,255,0.9);
             margin: 8px 0 0 0;
             font-size: 1rem;
+            text-shadow: 0 1px 4px rgba(0,0,0,0.3);
         }
 
-        /* Scenario card */
+        /* Metallic scenario card */
         .scenario-box {
-            background: #2A2A2A;
-            border: 1px solid #3A3A3A;
+            background: linear-gradient(
+                145deg,
+                #2a2a2a 0%,
+                #333333 40%,
+                #2a2a2a 100%
+            );
+            border: 1px solid rgba(255,255,255,0.08);
             border-left: 5px solid #6ABF1E;
             padding: 24px;
-            border-radius: 12px;
+            border-radius: 14px;
             margin-bottom: 24px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            box-shadow:
+                0 8px 32px rgba(0,0,0,0.4),
+                inset 0 1px 0 rgba(255,255,255,0.05);
             animation: fadeInUp 0.5s ease;
         }
 
         .scenario-box h3 {
             color: #6ABF1E;
             margin-top: 0;
-            font-size: 1.1rem;
+            font-size: 0.85rem;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 2px;
+            text-shadow: 0 0 12px rgba(106,191,30,0.5);
         }
 
         .scenario-box p {
-            color: #E0E0E0;
-            line-height: 1.7;
+            color: #D0D0D0;
+            line-height: 1.8;
             font-size: 0.95rem;
+            margin: 0;
         }
 
         /* Section labels */
         .section-label {
             color: #6ABF1E;
-            font-size: 0.8rem;
+            font-size: 0.78rem;
             font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 1.5px;
+            letter-spacing: 2px;
             margin-bottom: 6px;
+            text-shadow: 0 0 8px rgba(106,191,30,0.4);
         }
 
-        /* White text inputs */
+        /* Required badge */
+        .required-badge {
+            display: inline-block;
+            background: rgba(106,191,30,0.15);
+            color: #6ABF1E;
+            font-size: 0.65rem;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 20px;
+            border: 1px solid rgba(106,191,30,0.3);
+            margin-left: 8px;
+            vertical-align: middle;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        /* White metallic text inputs */
         .stTextInput > div > div > input {
-            background-color: #FFFFFF !important;
+            background: linear-gradient(
+                145deg,
+                #ffffff 0%,
+                #f5f5f5 100%
+            ) !important;
             color: #1A1A1A !important;
-            border: 2px solid #3A3A3A !important;
+            border: 2px solid #444 !important;
             border-radius: 10px !important;
             font-size: 1rem !important;
             padding: 10px 14px !important;
+            box-shadow:
+                inset 0 2px 4px rgba(0,0,0,0.1),
+                0 1px 0 rgba(255,255,255,0.05) !important;
+            transition: all 0.3s ease !important;
+            outline: none !important;
         }
 
         .stTextInput > div > div > input:focus {
             border-color: #6ABF1E !important;
-            box-shadow: 0 0 0 3px rgba(106,191,30,0.2) !important;
+            box-shadow:
+                0 0 0 3px rgba(106,191,30,0.25),
+                0 0 20px rgba(106,191,30,0.15),
+                inset 0 2px 4px rgba(0,0,0,0.1) !important;
+            outline: none !important;
         }
 
-        /* White text area */
+        /* Remove ALL red outlines on text input */
+        .stTextInput > div > div > input:focus-visible {
+            outline: none !important;
+            border-color: #6ABF1E !important;
+        }
+
+        /* White metallic text area */
         .stTextArea > div > div > textarea {
-            background-color: #FFFFFF !important;
+            background: linear-gradient(
+                145deg,
+                #ffffff 0%,
+                #f5f5f5 100%
+            ) !important;
             color: #1A1A1A !important;
-            border: 2px solid #3A3A3A !important;
+            border: 2px solid #444 !important;
             border-radius: 10px !important;
             font-size: 0.95rem !important;
-            line-height: 1.6 !important;
+            line-height: 1.7 !important;
+            box-shadow:
+                inset 0 2px 4px rgba(0,0,0,0.1) !important;
+            transition: all 0.3s ease !important;
+            outline: none !important;
         }
 
         .stTextArea > div > div > textarea:focus {
             border-color: #6ABF1E !important;
-            box-shadow: 0 0 0 3px rgba(106,191,30,0.2) !important;
+            box-shadow:
+                0 0 0 3px rgba(106,191,30,0.25),
+                0 0 20px rgba(106,191,30,0.15),
+                inset 0 2px 4px rgba(0,0,0,0.1) !important;
+            outline: none !important;
+        }
+
+        .stTextArea > div > div > textarea:focus-visible {
+            outline: none !important;
+            border-color: #6ABF1E !important;
         }
 
         /* Input labels */
-        .stTextInput label, .stTextArea label {
-            color: #AAAAAA !important;
+        .stTextInput label,
+        .stTextArea label {
+            color: #888 !important;
             font-size: 0.85rem !important;
             font-weight: 600 !important;
         }
 
-        /* Primary submit button */
-        div[data-testid="stButton"] > button[kind="primary"],
+        /* Metallic button */
         .stButton > button {
-            background: linear-gradient(135deg, #6ABF1E, #58A015) !important;
+            background: linear-gradient(
+                135deg,
+                #4a9010 0%,
+                #6ABF1E 40%,
+                #8fd44e 60%,
+                #6ABF1E 80%,
+                #4a9010 100%
+            ) !important;
+            background-size: 200% auto !important;
             color: white !important;
-            border: none !important;
+            border: 1px solid rgba(255,255,255,0.2) !important;
             border-radius: 10px !important;
             padding: 12px 24px !important;
             font-weight: 700 !important;
             font-size: 1rem !important;
             width: 100% !important;
-            transition: all 0.2s ease !important;
-            box-shadow: 0 4px 15px rgba(106,191,30,0.3) !important;
+            transition: all 0.3s ease !important;
+            box-shadow:
+                0 4px 15px rgba(106,191,30,0.4),
+                inset 0 1px 0 rgba(255,255,255,0.2) !important;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.3) !important;
+            animation: shimmer 3s linear infinite !important;
         }
 
         .stButton > button:hover {
             transform: translateY(-2px) !important;
-            box-shadow: 0 8px 25px rgba(106,191,30,0.4) !important;
+            box-shadow:
+                0 8px 30px rgba(106,191,30,0.5),
+                inset 0 1px 0 rgba(255,255,255,0.2) !important;
         }
 
-        /* Result cards */
+        .stButton > button:active {
+            transform: translateY(0px) !important;
+        }
+
+        /* Metallic score display */
+        .score-display {
+            background: linear-gradient(
+                145deg,
+                #1a1a1a 0%,
+                #2a2a2a 50%,
+                #1a1a1a 100%
+            );
+            border: 2px solid #6ABF1E;
+            border-radius: 16px;
+            padding: 28px;
+            text-align: center;
+            margin-bottom: 20px;
+            box-shadow:
+                0 0 40px rgba(106,191,30,0.3),
+                inset 0 1px 0 rgba(255,255,255,0.05);
+            animation: scoreReveal 0.6s ease, pulse 2s ease-in-out;
+        }
+
+        .score-number {
+            font-size: 5rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, #6ABF1E, #8fd44e, #6ABF1E);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1;
+            text-shadow: none;
+        }
+
+        .score-label {
+            color: #888;
+            font-size: 0.9rem;
+            margin-top: 4px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .grade-badge {
+            display: inline-block;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 0.95rem;
+            margin-top: 14px;
+            letter-spacing: 0.5px;
+        }
+
+        .grade-pass {
+            background: rgba(106,191,30,0.15);
+            color: #6ABF1E;
+            border: 1px solid rgba(106,191,30,0.4);
+            box-shadow: 0 0 15px rgba(106,191,30,0.2);
+        }
+
+        .grade-borderline {
+            background: rgba(255,165,0,0.15);
+            color: #FFA500;
+            border: 1px solid rgba(255,165,0,0.4);
+            box-shadow: 0 0 15px rgba(255,165,0,0.2);
+        }
+
+        .grade-fail {
+            background: rgba(255,80,80,0.15);
+            color: #FF5050;
+            border: 1px solid rgba(255,80,80,0.4);
+            box-shadow: 0 0 15px rgba(255,80,80,0.2);
+        }
+
+        /* Metallic result cards */
         .result-card {
-            background: #2A2A2A;
-            border: 1px solid #3A3A3A;
+            background: linear-gradient(
+                145deg,
+                #252525 0%,
+                #2f2f2f 100%
+            );
+            border: 1px solid rgba(255,255,255,0.06);
             border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 16px;
+            padding: 20px 24px;
+            margin-bottom: 14px;
             animation: fadeInUp 0.4s ease;
+            box-shadow:
+                0 4px 20px rgba(0,0,0,0.3),
+                inset 0 1px 0 rgba(255,255,255,0.04);
         }
 
         .result-card h4 {
             margin: 0 0 10px 0;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             text-transform: uppercase;
-            letter-spacing: 1.5px;
+            letter-spacing: 2px;
             font-weight: 700;
         }
 
         .result-card p {
             margin: 0;
-            color: #E0E0E0;
-            line-height: 1.6;
+            color: #D0D0D0;
+            line-height: 1.7;
+            font-size: 0.93rem;
         }
 
-        .card-strengths { border-left: 4px solid #6ABF1E; }
-        .card-strengths h4 { color: #6ABF1E; }
-
-        .card-weaknesses { border-left: 4px solid #FFA500; }
-        .card-weaknesses h4 { color: #FFA500; }
-
-        .card-feedback { border-left: 4px solid #4A9EFF; }
-        .card-feedback h4 { color: #4A9EFF; }
-
-        /* Score display */
-        .score-display {
-            background: linear-gradient(135deg, #1A1A1A, #2A2A2A);
-            border: 2px solid #6ABF1E;
-            border-radius: 16px;
-            padding: 24px;
-            text-align: center;
-            margin-bottom: 20px;
-            box-shadow: 0 0 30px rgba(106,191,30,0.2);
-            animation: pulse 2s ease-in-out;
+        .card-strengths {
+            border-left: 4px solid #6ABF1E;
         }
-
-        .score-display .score-number {
-            font-size: 4rem;
-            font-weight: 900;
+        .card-strengths h4 {
             color: #6ABF1E;
-            line-height: 1;
+            text-shadow: 0 0 10px rgba(106,191,30,0.4);
         }
 
-        .score-display .score-label {
-            color: #AAAAAA;
-            font-size: 0.9rem;
-            margin-top: 4px;
+        .card-weaknesses {
+            border-left: 4px solid #FFA500;
+        }
+        .card-weaknesses h4 {
+            color: #FFA500;
+            text-shadow: 0 0 10px rgba(255,165,0,0.4);
         }
 
-        .score-display .grade-badge {
-            display: inline-block;
-            padding: 6px 16px;
-            border-radius: 20px;
-            font-weight: 700;
-            font-size: 0.9rem;
-            margin-top: 12px;
+        .card-feedback {
+            border-left: 4px solid #4A9EFF;
         }
-
-        .grade-pass { background: rgba(106,191,30,0.2); color: #6ABF1E; }
-        .grade-borderline { background: rgba(255,165,0,0.2); color: #FFA500; }
-        .grade-fail { background: rgba(255,80,80,0.2); color: #FF5050; }
+        .card-feedback h4 {
+            color: #4A9EFF;
+            text-shadow: 0 0 10px rgba(74,158,255,0.4);
+        }
 
         /* Divider */
         .ias-divider {
             border: none;
-            border-top: 1px solid #3A3A3A;
+            border-top: 1px solid #2A2A2A;
             margin: 24px 0;
         }
 
         /* Footer */
         .ias-footer {
             text-align: center;
-            color: #555;
+            color: #444;
             font-size: 0.78rem;
             margin-top: 40px;
             padding-top: 20px;
             border-top: 1px solid #2A2A2A;
+            letter-spacing: 1px;
+        }
+
+        /* Warning override */
+        div[data-testid="stAlert"] {
+            background: rgba(255,165,0,0.08) !important;
+            border: 1px solid rgba(255,165,0,0.3) !important;
+            border-radius: 10px !important;
+            color: #FFA500 !important;
+        }
+
+        /* Spinner */
+        .stSpinner > div {
+            border-top-color: #6ABF1E !important;
         }
 
         /* Animations */
+        @keyframes shimmer {
+            0% { background-position: 200% center; }
+            100% { background-position: -200% center; }
+        }
+
         @keyframes fadeInDown {
             from { opacity: 0; transform: translateY(-20px); }
             to { opacity: 1; transform: translateY(0); }
@@ -251,22 +433,15 @@ st.markdown("""
             to { opacity: 1; transform: translateY(0); }
         }
 
+        @keyframes scoreReveal {
+            from { opacity: 0; transform: scale(0.8); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
         @keyframes pulse {
             0% { box-shadow: 0 0 0 0 rgba(106,191,30,0.4); }
             70% { box-shadow: 0 0 0 20px rgba(106,191,30,0); }
             100% { box-shadow: 0 0 0 0 rgba(106,191,30,0); }
-        }
-
-        /* Spinner color */
-        .stSpinner > div {
-            border-top-color: #6ABF1E !important;
-        }
-
-        /* Warning and info */
-        .stWarning {
-            background-color: rgba(255,165,0,0.1) !important;
-            border-color: #FFA500 !important;
-            color: #FFA500 !important;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -376,7 +551,7 @@ st.markdown(f"""
     </div>
 """, unsafe_allow_html=True)
 
-col1, col2 = st.columns([4, 1])
+col1, col2 = st.columns([5, 1])
 with col2:
     if st.button("🔄 New"):
         st.session_state.scenario = get_random_scenario()
@@ -384,12 +559,22 @@ with col2:
         st.rerun()
 
 
-# ── Input ─────────────────────────────────────────────────────────────────────
+# ── Inputs ────────────────────────────────────────────────────────────────────
 
-st.markdown('<div class="section-label">👤 Student ID</div>', unsafe_allow_html=True)
-student_id = st.text_input("Student ID", label_visibility="collapsed")
+st.markdown(
+    '<div class="section-label">👤 Student Number <span class="required-badge">Required</span></div>',
+    unsafe_allow_html=True
+)
+student_id = st.text_input(
+    "Student Number",
+    placeholder="e.g. 20222526",
+    label_visibility="collapsed"
+)
 
-st.markdown('<div class="section-label">✍️ Your Answer</div>', unsafe_allow_html=True)
+st.markdown(
+    '<div class="section-label">✍️ Your Answer</div>',
+    unsafe_allow_html=True
+)
 answer = st.text_area(
     "Your Answer",
     placeholder="Type your answer here. Be thorough — the AI will assess your understanding, analysis, evidence and recommendations...",
@@ -401,10 +586,10 @@ st.markdown('<hr class="ias-divider">', unsafe_allow_html=True)
 
 if st.button("📤 Submit for AI Grading"):
 
-    if not student_id:
-        st.warning("⚠️ Please enter your Student ID before submitting.")
+    if not student_id.strip():
+        st.warning("⚠️ Student Number is required before submitting.")
 
-    elif not answer:
+    elif not answer.strip():
         st.warning("⚠️ Please write your answer before submitting.")
 
     else:
@@ -415,7 +600,6 @@ if st.button("📤 Submit for AI Grading"):
             weaknesses = ", ".join(result["weaknesses"])
             feedback = result["feedback"]
 
-        # Grade badge
         if score >= 75:
             grade_class = "grade-pass"
             grade_label = "✅ Pass"
@@ -426,7 +610,6 @@ if st.button("📤 Submit for AI Grading"):
             grade_class = "grade-fail"
             grade_label = "❌ Needs Work"
 
-        # Score card
         st.markdown(f"""
             <div class="score-display">
                 <div class="score-number">{score}</div>
@@ -435,7 +618,6 @@ if st.button("📤 Submit for AI Grading"):
             </div>
         """, unsafe_allow_html=True)
 
-        # Result cards
         st.markdown(f"""
             <div class="result-card card-strengths">
                 <h4>💪 Strengths</h4>
@@ -467,6 +649,6 @@ if st.button("📤 Submit for AI Grading"):
 
 st.markdown("""
     <div class="ias-footer">
-        Institute of Accounting Science · AI Tutor MVP · Confidential
+        INSTITUTE OF ACCOUNTING SCIENCE · AI TUTOR MVP · CONFIDENTIAL
     </div>
 """, unsafe_allow_html=True)
