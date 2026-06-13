@@ -3,18 +3,34 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from datetime import datetime
 from openai import OpenAI
-from dotenv import load_dotenv
 import os
 import json
 import random
 
-load_dotenv()
-
 client = OpenAI(
-    api_key=os.getenv("OPENAI_API_KEY")
+    api_key=st.secrets["OPENAI_API_KEY"]
 )
 
-# ── All functions defined FIRST so get_random_scenario exists when called ────
+# ── Google client using Streamlit secrets ────────────────────────────────────
+
+def get_google_client():
+
+    scope = [
+        "https://spreadsheets.google.com/feeds",
+        "https://www.googleapis.com/auth/drive"
+    ]
+
+    creds_dict = json.loads(st.secrets["GOOGLE_CREDENTIALS"])
+
+    creds = ServiceAccountCredentials.from_json_keyfile_dict(
+        creds_dict,
+        scope
+    )
+
+    return gspread.authorize(creds)
+
+
+# ── All functions ────────────────────────────────────────────────────────────
 
 def grade_answer(student_answer):
 
@@ -50,34 +66,14 @@ JSON Format:
 
 def connect_sheet():
 
-    scope = [
-        "https://spreadsheets.google.com/feeds",
-        "https://www.googleapis.com/auth/drive"
-    ]
-
-    creds = ServiceAccountCredentials.from_json_keyfile_name(
-        "credentials.json",
-        scope
-    )
-
-    gc = gspread.authorize(creds)
+    gc = get_google_client()
 
     return gc.open("AI Tutor Results").sheet1
 
 
 def get_random_scenario():
 
-    scope = [
-        "https://spreadsheets.google.com/feeds",
-        "https://www.googleapis.com/auth/drive"
-    ]
-
-    creds = ServiceAccountCredentials.from_json_keyfile_name(
-        "credentials.json",
-        scope
-    )
-
-    gc = gspread.authorize(creds)
+    gc = get_google_client()
 
     sheet = gc.open(
         "AI Tutor Scenarios"
@@ -114,7 +110,7 @@ def log_submission(
     ])
 
 
-# ── Session state initialised AFTER functions are defined ────────────────────
+# ── Session state ────────────────────────────────────────────────────────────
 
 if "scenario" not in st.session_state:
     st.session_state.scenario = get_random_scenario()
@@ -138,6 +134,10 @@ student_id = st.text_input("Student ID")
 answer = st.text_area(
     "Submit your answer"
 )
+
+if st.button("Load New Scenario"):
+    st.session_state.scenario = get_random_scenario()
+    st.rerun()
 
 if st.button("Submit"):
 
