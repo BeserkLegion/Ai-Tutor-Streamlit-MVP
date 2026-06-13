@@ -6,11 +6,113 @@ from openai import OpenAI
 import json
 import random
 
+# ── Branding ─────────────────────────────────────────────────────────────────
+
+st.set_page_config(
+    page_title="IAS AI Tutor",
+    page_icon="🎓",
+    layout="centered"
+)
+
+st.markdown("""
+    <style>
+        /* Background */
+        .stApp {
+            background-color: #F9F9F9;
+        }
+
+        /* Header banner */
+        .ias-header {
+            background-color: #6ABF1E;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .ias-header h1 {
+            color: white;
+            font-size: 2rem;
+            margin: 0;
+        }
+
+        .ias-header p {
+            color: white;
+            margin: 5px 0 0 0;
+            font-size: 0.9rem;
+        }
+
+        /* Scenario box */
+        .scenario-box {
+            background-color: #1A1A1A;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 5px solid #6ABF1E;
+        }
+
+        .scenario-box h3 {
+            color: #6ABF1E;
+            margin-top: 0;
+        }
+
+        /* Buttons */
+        .stButton > button {
+            background-color: #6ABF1E;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 20px;
+            font-weight: bold;
+            width: 100%;
+        }
+
+        .stButton > button:hover {
+            background-color: #58A015;
+            color: white;
+        }
+
+        /* Score metric */
+        .stMetric {
+            background-color: #1A1A1A;
+            border-radius: 10px;
+            padding: 10px;
+            color: white;
+        }
+
+        /* Success box */
+        .stSuccess {
+            background-color: #6ABF1E;
+            color: white;
+        }
+
+        /* Text input and area */
+        .stTextInput > div > div > input,
+        .stTextArea > div > div > textarea {
+            border: 2px solid #6ABF1E;
+            border-radius: 8px;
+        }
+
+        /* Footer */
+        .ias-footer {
+            text-align: center;
+            color: #999;
+            font-size: 0.8rem;
+            margin-top: 40px;
+        }
+    </style>
+""", unsafe_allow_html=True)
+
+
+# ── OpenAI client ─────────────────────────────────────────────────────────────
+
 client = OpenAI(
     api_key=st.secrets["OPENAI_API_KEY"]
 )
 
-# ── Google client using Streamlit secrets ────────────────────────────────────
+
+# ── Google client ─────────────────────────────────────────────────────────────
 
 def get_google_client():
 
@@ -27,12 +129,12 @@ def get_google_client():
     return gspread.authorize(creds)
 
 
-# ── All functions ────────────────────────────────────────────────────────────
+# ── All functions ─────────────────────────────────────────────────────────────
 
 def grade_answer(student_answer):
 
     prompt = f"""
-You are an academic tutor.
+You are an academic tutor at the Institute of Accounting Science.
 
 Grade the student's answer out of 100.
 
@@ -107,66 +209,104 @@ def log_submission(
     ])
 
 
-# ── Session state ────────────────────────────────────────────────────────────
+# ── Session state ─────────────────────────────────────────────────────────────
 
 if "scenario" not in st.session_state:
     st.session_state.scenario = get_random_scenario()
 
 
-# ── UI ───────────────────────────────────────────────────────────────────────
+# ── UI ────────────────────────────────────────────────────────────────────────
 
-st.title("IAS AI Tutor")
+# Header
+st.markdown("""
+    <div class="ias-header">
+        <h1>🎓 IAS AI Tutor</h1>
+        <p>The Key To Success — Powered by Artificial Intelligence</p>
+    </div>
+""", unsafe_allow_html=True)
+
+# Scenario box
 scenario = st.session_state.scenario
 
-st.subheader(
-    scenario["Title"]
-)
+st.markdown(f"""
+    <div class="scenario-box">
+        <h3>📋 {scenario["Title"]}</h3>
+        <p>{scenario["Scenario"]}</p>
+    </div>
+""", unsafe_allow_html=True)
 
-st.write(
-    scenario["Scenario"]
-)
+col1, col2 = st.columns([3, 1])
 
+with col2:
+    if st.button("🔄 New Scenario"):
+        st.session_state.scenario = get_random_scenario()
+        st.rerun()
+
+# Student input
+st.markdown("### 👤 Your Details")
 student_id = st.text_input("Student ID")
 
+st.markdown("### ✍️ Your Answer")
 answer = st.text_area(
-    "Submit your answer"
+    "Type your answer here...",
+    height=200
 )
 
-if st.button("Load New Scenario"):
-    st.session_state.scenario = get_random_scenario()
-    st.rerun()
+st.markdown("---")
 
-if st.button("Submit"):
+if st.button("📤 Submit for Grading"):
 
-    with st.spinner("Grading your answer..."):
+    if not student_id:
+        st.warning("⚠️ Please enter your Student ID before submitting.")
 
-        result = grade_answer(answer)
-        score = result["score"]
+    elif not answer:
+        st.warning("⚠️ Please write your answer before submitting.")
 
-        strengths = ", ".join(
-            result["strengths"]
-        )
+    else:
+        with st.spinner("🤖 AI is grading your answer..."):
 
-        weaknesses = ", ".join(
-            result["weaknesses"]
-        )
+            result = grade_answer(answer)
+            score = result["score"]
 
-        feedback = result["feedback"]
-        st.success("Assessment Complete")
+            strengths = ", ".join(
+                result["strengths"]
+            )
 
-        st.metric(
-            "Score",
-            f"{score}/100"
-        )
+            weaknesses = ", ".join(
+                result["weaknesses"]
+            )
 
-        st.subheader("Strengths")
-        st.write(strengths)
+            feedback = result["feedback"]
 
-        st.subheader("Weaknesses")
-        st.write(weaknesses)
+        st.success("✅ Assessment Complete!")
 
-        st.subheader("Feedback")
-        st.write(feedback)
+        # Score display
+        st.markdown("### 📊 Your Results")
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+            st.metric(
+                label="Your Score",
+                value=f"{score}/100"
+            )
+
+        with col2:
+            if score >= 75:
+                st.metric(label="Grade", value="🟢 Pass")
+            elif score >= 50:
+                st.metric(label="Grade", value="🟡 Borderline")
+            else:
+                st.metric(label="Grade", value="🔴 Needs Work")
+
+        st.markdown("### 💪 Strengths")
+        st.success(strengths)
+
+        st.markdown("### ⚠️ Weaknesses")
+        st.warning(weaknesses)
+
+        st.markdown("### 💡 Feedback")
+        st.info(feedback)
 
         log_submission(
             student_id=student_id,
@@ -178,3 +318,10 @@ if st.button("Submit"):
             weaknesses=weaknesses,
             feedback=feedback
         )
+
+# Footer
+st.markdown("""
+    <div class="ias-footer">
+        Institute of Accounting Science — AI Tutor MVP
+    </div>
+""", unsafe_allow_html=True)
