@@ -659,3 +659,5 @@ elif st.session_state.screen == "result":
 
     st.markdown('<div class="ias-footer">INSTITUTE OF ACCOUNTING SCIENCE · AI TUTOR · CONFIDENTIAL</div>',
                 unsafe_allow_html=True)
+    
+    #This will be the base app going forward 
