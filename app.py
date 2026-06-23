@@ -450,9 +450,23 @@ def hash_password(password: str) -> str:
 
 @st.cache_data(ttl=300)
 def load_users():
+    """Load users by column index to avoid gspread header-parsing bugs.
+    Sheet column order must be: A=Email  B=Password  C=Name  D=Active"""
     gc = get_google_client()
-    rows = gc.open("AI Tutor Users").sheet1.get_all_records()
-    return rows
+    all_rows = gc.open("AI Tutor Users").sheet1.get_all_values()
+    if len(all_rows) < 2:
+        return []
+    users = []
+    for row in all_rows[1:]:  # skip header row
+        while len(row) < 4:
+            row.append("")
+        users.append({
+            "Email":    row[0].strip(),
+            "Password": row[1].strip(),
+            "Name":     row[2].strip(),
+            "Active":   row[3].strip(),
+        })
+    return users
 
 
 def authenticate(email: str, password: str):
@@ -461,54 +475,12 @@ def authenticate(email: str, password: str):
     pw_hash = hash_password(password)
 
     for user in users:
-        if str(user.get("Email", "")).strip().lower() == email_lower:
-            if str(user.get("Active", "")).strip().upper() != "TRUE":
+        if user["Email"].lower() == email_lower:
+            if user["Active"].upper() != "TRUE":
                 return None  # account suspended
-            stored = str(user.get("Password", "")).strip()
-            if stored == pw_hash:
+            if user["Password"] == pw_hash:
                 return user
     return None
-
-
-# ── DEBUG SIDEBAR — remove once login is confirmed working ────────────────────
-
-with st.sidebar:
-    st.markdown("### 🔧 Auth Debug")
-    debug_email = st.text_input("Debug email", key="debug_email")
-    debug_pw    = st.text_input("Debug password", key="debug_pw")
-    if st.button("Run debug check", key="debug_btn"):
-        computed = hash_password(debug_pw)
-        st.code(f"Computed hash ({len(computed)} chars):\n{computed}")
-        try:
-            users = load_users()
-            matched_user = None
-            for u in users:
-                if str(u.get("Email", "")).strip().lower() == debug_email.strip().lower():
-                    matched_user = u
-                    break
-            if matched_user is None:
-                st.error("❌ Email not found in sheet at all.")
-            else:
-                stored = str(matched_user.get("Password", "")).strip()
-                active = str(matched_user.get("Active", "")).strip()
-                st.code(f"Stored hash  ({len(stored)} chars):\n{stored}")
-                st.write(f"**Active field:** `{active}`")
-                st.write(f"**Hashes match:** `{stored == computed}`")
-                if stored != computed:
-                    # Character-by-character diff to find where they diverge
-                    for i, (a, b) in enumerate(zip(stored, computed)):
-                        if a != b:
-                            st.warning(f"First difference at position {i}: sheet=`{a}` computed=`{b}`")
-                            break
-                    if len(stored) != len(computed):
-                        st.warning(f"Length mismatch: sheet={len(stored)}, computed={len(computed)}")
-        except Exception as e:
-            st.error(f"Error reading sheet: {e}")
-    if st.button("Clear cache & reload", key="debug_clear"):
-        st.cache_data.clear()
-        st.success("Cache cleared — rerun the debug check now.")
-
-# ─────────────────────────────────────────────────────────────────────────────
 
 
 # ── Data helpers ───────────────────────────────────────────────────────────────
