@@ -29,6 +29,11 @@ st.markdown("""
 
     header[data-testid="stHeader"] { background: transparent; }
 
+    /* Hide Streamlit toolbar */
+    div[data-testid="stToolbar"] { display: none !important; }
+    #MainMenu { display: none !important; }
+    footer { display: none !important; }
+
     /* ── Shared button reset ── */
     .stButton > button {
         background: #000 !important;
