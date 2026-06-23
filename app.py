@@ -612,7 +612,7 @@ elif st.session_state.screen == "answer":
 # ══════════════════════════════════════════════════════════════════════════════
 
 elif st.session_state.screen == "result":
-
+# This is the gradient cheker 
     r = st.session_state.result
     score = r["score"]
 
