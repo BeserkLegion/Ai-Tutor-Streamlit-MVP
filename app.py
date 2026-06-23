@@ -396,27 +396,48 @@ def get_tasks_for_subject(subject):
     return [r for r in rows if str(r.get("Subject", "")).strip().lower() == subject.lower()]
 
 
-def grade_answer(scenario_text, question_text, student_answer):
-    prompt = f"""You are an academic tutor at the Institute of Accounting Science.
+DEFAULT_GRADING_PROMPT = (
+    "You are an academic tutor at the Institute of Accounting Science.\n\n"
+    "Scenario:\n{scenario}\n\n"
+    "Question:\n{question}\n\n"
+    "Student Answer:\n{answer}\n\n"
+    "Grade the student's answer out of 100 based on understanding, analysis, "
+    "evidence and recommendations.\n\n"
+    "Return ONLY valid JSON with no extra text:\n"
+    '{"score": 0, "strengths": [], "weaknesses": [], "feedback": ""}'
+)
 
-Scenario:
-{scenario_text}
 
-Question:
-{question_text}
-
-Student Answer:
-{student_answer}
-
-Grade the student's answer out of 100 based on understanding, analysis, evidence and recommendations.
-
-Return ONLY valid JSON with no extra text:
-{{
-    "score": 0,
-    "strengths": [],
-    "weaknesses": [],
-    "feedback": ""
-}}"""
+def grade_answer(scenario_text, question_text, student_answer, custom_prompt=""):
+    """Grade a student answer. Uses custom_prompt from the sheet if provided,
+    otherwise falls back to DEFAULT_GRADING_PROMPT.
+    Custom prompts should use {scenario}, {question}, {answer} placeholders."""
+    if custom_prompt and custom_prompt.strip():
+        try:
+            prompt = custom_prompt.format(
+                scenario=scenario_text,
+                question=question_text,
+                answer=student_answer
+            )
+        except KeyError:
+            # Placeholders missing — append context manually
+            prompt = (
+                custom_prompt.strip()
+                + "\n\nScenario:\n" + scenario_text
+                + "\n\nQuestion:\n" + question_text
+                + "\n\nStudent Answer:\n" + student_answer
+            )
+        # Always enforce JSON output
+        prompt += (
+            '\n\nReturn ONLY valid JSON with no extra text:\n'
+            '{"score": 0, "strengths": [], "weaknesses": [], "feedback": ""}'
+        )
+    else:
+        prompt = DEFAULT_GRADING_PROMPT.format(
+            scenario=scenario_text,
+            question=question_text,
+            answer=student_answer
+        )
     response = client.responses.create(model="gpt-5", input=prompt)
     return json.loads(response.output_text)
 
@@ -571,9 +592,10 @@ elif st.session_state.screen == "answer":
         st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
 
-    title    = task.get("Title", "Task")
-    scenario = task.get("Scenario", "")
-    question = task.get("Question", "")
+    title         = task.get("Title", "Task")
+    scenario      = task.get("Scenario", "")
+    question      = task.get("Question", "")
+    custom_prompt = task.get("Prompt", "")
 
     st.markdown(f'<div class="answer-header">{title}</div>', unsafe_allow_html=True)
     st.markdown(f'<div class="answer-body"><strong>Scenario</strong><br>{scenario}</div>',
@@ -605,7 +627,7 @@ elif st.session_state.screen == "answer":
             st.warning("⚠️ Please write your answer before submitting.")
         else:
             with st.spinner("Analysing your answer..."):
-                result = grade_answer(scenario, question, answer)
+                result = grade_answer(scenario, question, answer, custom_prompt)
 
             st.session_state.result = {
                 "score":      result["score"],
