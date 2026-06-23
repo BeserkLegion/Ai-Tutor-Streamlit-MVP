@@ -4,6 +4,7 @@ from oauth2client.service_account import ServiceAccountCredentials
 from datetime import datetime
 from openai import OpenAI
 import json
+import hashlib
 
 # ── Page config ────────────────────────────────────────────────────────────────
 
@@ -41,7 +42,6 @@ st.markdown("""
         text-transform: none !important;
         padding: 52px 16px !important;
         width: 100% !important;
-        /* Gradient border via background-clip trick */
         border: 2px solid transparent !important;
     }
 
@@ -49,13 +49,6 @@ st.markdown("""
     .stButton > button:active { opacity: 0.6 !important; }
     .stButton > button:focus { outline: none !important; box-shadow: none !important; }
 
-    /* ── Per-subject gradient borders ──
-       Streamlit renders buttons in DOM order. On the home screen:
-       col1 row1 = Manfin, col2 row1 = Audit, col1 row2 = Tax, col2 row2 = Finacc
-       We target them using nth-of-type on their parent stButton divs.
-       The Integrated button sits in its own full-width row below. ── */
-
-    /* All home tiles share the background-clip border approach */
     div[data-testid="column"]:nth-of-type(1) div[data-testid="stButton"]:nth-of-type(1) > button {
         background:
             linear-gradient(#000, #000) padding-box,
@@ -77,13 +70,44 @@ st.markdown("""
             linear-gradient(135deg, #000000 0%, #00e676 100%) border-box !important;
     }
 
-    /* Integrated — full-width row, smaller vertical padding */
     .integrated-btn > div[data-testid="stButton"] > button {
         padding: 28px 16px !important;
         font-size: 1.3rem !important;
         background:
             linear-gradient(#000, #000) padding-box,
             linear-gradient(90deg, #000000 0%, #1a3aff 100%) border-box !important;
+    }
+
+    /* ── Login screen ── */
+    .login-title {
+        color: #ffffff;
+        font-size: 2rem;
+        font-weight: 700;
+        text-align: center;
+        margin: 48px 0 6px 0;
+        letter-spacing: 0.5px;
+    }
+
+    .login-subtitle {
+        color: #888888;
+        font-size: 0.88rem;
+        text-align: center;
+        margin: 0 0 40px 0;
+    }
+
+    .login-btn > div[data-testid="stButton"] > button {
+        background:
+            linear-gradient(#000, #000) padding-box,
+            linear-gradient(90deg, #00eaff, #7b2fff) border-box !important;
+        padding: 14px 16px !important;
+        font-size: 1rem !important;
+        font-weight: 600 !important;
+        letter-spacing: 1px !important;
+        text-transform: uppercase !important;
+    }
+
+    .login-btn > div[data-testid="stButton"] > button:hover {
+        opacity: 0.85 !important;
     }
 
     /* ── Home title ── */
@@ -94,6 +118,20 @@ st.markdown("""
         text-align: center;
         margin: 40px 0 32px 0;
         letter-spacing: 0.5px;
+    }
+
+    /* ── User badge ── */
+    .user-badge {
+        color: #888;
+        font-size: 0.78rem;
+        text-align: center;
+        margin-bottom: 20px;
+        letter-spacing: 0.3px;
+    }
+
+    .user-badge span {
+        color: #00cfff;
+        font-weight: 600;
     }
 
     /* ── Task list screen ── */
@@ -135,7 +173,6 @@ st.markdown("""
         pointer-events: none;
     }
 
-    /* Task list buttons — override the home tile styles */
     .task-list-btn > div[data-testid="stButton"] > button {
         background: #000 !important;
         border: 1.5px solid transparent !important;
@@ -151,7 +188,6 @@ st.markdown("""
         line-height: 1.6 !important;
     }
 
-    /* Back / nav buttons */
     .nav-btn > div[data-testid="stButton"] > button {
         background: transparent !important;
         border: 1px solid #333 !important;
@@ -165,6 +201,26 @@ st.markdown("""
     .nav-btn > div[data-testid="stButton"] > button:hover {
         border-color: #555 !important;
         color: #ccc !important;
+        background: transparent !important;
+        opacity: 1 !important;
+    }
+
+    /* Sign out button — small, top-right feel */
+    .signout-btn > div[data-testid="stButton"] > button {
+        background: transparent !important;
+        border: 1px solid #2a2a2a !important;
+        color: #555 !important;
+        padding: 6px 14px !important;
+        font-size: 0.75rem !important;
+        font-weight: 400 !important;
+        width: auto !important;
+        letter-spacing: 0.5px !important;
+        text-transform: uppercase !important;
+    }
+
+    .signout-btn > div[data-testid="stButton"] > button:hover {
+        border-color: #555 !important;
+        color: #aaa !important;
         background: transparent !important;
         opacity: 1 !important;
     }
@@ -233,7 +289,6 @@ st.markdown("""
         box-shadow: none !important;
     }
 
-    /* Submit button */
     .submit-btn > div[data-testid="stButton"] > button {
         background: #5cb800 !important;
         color: #ffffff !important;
@@ -324,7 +379,6 @@ st.markdown("""
     .card-feedback   { border-left: 3px solid #4A9EFF; }
     .card-feedback h4 { color: #4A9EFF; }
 
-    /* Result nav buttons */
     .result-nav > div[data-testid="stButton"] > button {
         background: #000 !important;
         border: 1px solid #333 !important;
@@ -343,7 +397,6 @@ st.markdown("""
         opacity: 1 !important;
     }
 
-    /* Footer */
     .ias-footer {
         text-align: center;
         color: #333;
@@ -361,6 +414,13 @@ st.markdown("""
         border: 1px solid rgba(255,165,0,0.25) !important;
         border-radius: 6px !important;
         color: #FFA500 !important;
+    }
+
+    /* Error alert — red tint */
+    div[data-testid="stAlert"][data-baseweb="notification"] {
+        background: rgba(255,80,80,0.06) !important;
+        border: 1px solid rgba(255,80,80,0.25) !important;
+        color: #FF5050 !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -380,6 +440,43 @@ def get_google_client():
         st.secrets["gcp_service_account"], scope
     )
     return gspread.authorize(creds)
+
+
+# ── Auth helpers ───────────────────────────────────────────────────────────────
+
+def hash_password(password: str) -> str:
+    """SHA-256 hash for comparison. Passwords in the sheet should be plain text;
+    this hashes the user's input before comparing to the stored hash.
+    If you store plain text passwords in the sheet, compare directly instead."""
+    return hashlib.sha256(password.strip().encode()).hexdigest()
+
+
+@st.cache_data(ttl=300)
+def load_users():
+    """Load the 'AI Tutor Users' sheet.
+    Expected columns: Email | Password | Name | Active
+    Password column should contain SHA-256 hashes (see dev log).
+    Active column: TRUE / FALSE — set FALSE to suspend a user without deleting."""
+    gc = get_google_client()
+    rows = gc.open("AI Tutor Users").sheet1.get_all_records()
+    return rows
+
+
+def authenticate(email: str, password: str):
+    """Returns the user row dict on success, None on failure.
+    Checks: email match (case-insensitive) → Active == TRUE → password hash match."""
+    users = load_users()
+    email_lower = email.strip().lower()
+    pw_hash = hash_password(password)
+
+    for user in users:
+        if str(user.get("Email", "")).strip().lower() == email_lower:
+            if str(user.get("Active", "")).strip().upper() != "TRUE":
+                return None  # account suspended
+            stored = str(user.get("Password", "")).strip()
+            if stored == pw_hash:
+                return user
+    return None
 
 
 # ── Data helpers ───────────────────────────────────────────────────────────────
@@ -409,9 +506,6 @@ DEFAULT_GRADING_PROMPT = (
 
 
 def grade_answer(scenario_text, question_text, student_answer, custom_prompt=""):
-    """Grade a student answer. Uses custom_prompt from the sheet if provided,
-    otherwise falls back to DEFAULT_GRADING_PROMPT.
-    Custom prompts should use {scenario}, {question}, {answer} placeholders."""
     if custom_prompt and custom_prompt.strip():
         try:
             prompt = custom_prompt.format(
@@ -420,14 +514,12 @@ def grade_answer(scenario_text, question_text, student_answer, custom_prompt="")
                 answer=student_answer
             )
         except KeyError:
-            # Placeholders missing — append context manually
             prompt = (
                 custom_prompt.strip()
                 + "\n\nScenario:\n" + scenario_text
                 + "\n\nQuestion:\n" + question_text
                 + "\n\nStudent Answer:\n" + student_answer
             )
-        # Always enforce JSON output
         prompt += (
             '\n\nReturn ONLY valid JSON with no extra text:\n'
             '{"score": 0, "strengths": [], "weaknesses": [], "feedback": ""}'
@@ -443,12 +535,13 @@ def grade_answer(scenario_text, question_text, student_answer, custom_prompt="")
 
 
 def log_submission(student_id, subject, scenario_id, attempt, score,
-                   response_text, strengths, weaknesses, feedback):
+                   response_text, strengths, weaknesses, feedback, email=""):
     gc = get_google_client()
     sheet = gc.open("AI Tutor Results").sheet1
     sheet.append_row([
         datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         student_id,
+        email,
         subject,
         scenario_id,
         attempt,
@@ -463,10 +556,12 @@ def log_submission(student_id, subject, scenario_id, attempt, score,
 # ── Session state defaults ─────────────────────────────────────────────────────
 
 for key, default in {
-    "screen": "home",
-    "subject": None,
-    "task": None,
-    "result": None,
+    "screen":        "login",
+    "subject":       None,
+    "task":          None,
+    "result":        None,
+    "user":          None,   # dict from users sheet on successful login
+    "login_error":   "",
 }.items():
     if key not in st.session_state:
         st.session_state[key] = default
@@ -494,16 +589,106 @@ def go_answer(task):
     st.session_state.result = None
 
 
+def sign_out():
+    for key in ["screen", "subject", "task", "result", "user", "login_error"]:
+        del st.session_state[key]
+    st.rerun()
+
+
+# ── Sign-out button (shown on every post-login screen) ────────────────────────
+
+def render_signout():
+    col_space, col_btn = st.columns([6, 1])
+    with col_btn:
+        st.markdown('<div class="signout-btn">', unsafe_allow_html=True)
+        if st.button("Sign out", key="signout"):
+            sign_out()
+        st.markdown('</div>', unsafe_allow_html=True)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# SCREEN 0 — Login
+# ══════════════════════════════════════════════════════════════════════════════
+
+if st.session_state.screen == "login":
+
+    st.markdown('<div class="login-title">IAS AI Tutor</div>', unsafe_allow_html=True)
+    st.markdown('<div class="login-subtitle">Sign in with your institutional Google account and access password</div>',
+                unsafe_allow_html=True)
+
+    # Centre the form with a narrow column
+    _, col, _ = st.columns([1, 3, 1])
+    with col:
+        st.markdown('<div class="field-label">Google account email</div>', unsafe_allow_html=True)
+        email_input = st.text_input("Email", placeholder="yourname@gmail.com",
+                                    label_visibility="collapsed")
+
+        st.markdown('<div class="field-label" style="margin-top:14px;">Access password</div>',
+                    unsafe_allow_html=True)
+        password_input = st.text_input("Password", type="password",
+                                       placeholder="Enter your access password",
+                                       label_visibility="collapsed")
+
+        st.markdown('<div style="height:10px"></div>', unsafe_allow_html=True)
+
+        st.markdown('<div class="login-btn">', unsafe_allow_html=True)
+        login_btn = st.button("Sign In", key="login_submit", use_container_width=True)
+        st.markdown('</div>', unsafe_allow_html=True)
+
+        if st.session_state.login_error:
+            st.error(st.session_state.login_error)
+
+    if login_btn:
+        if not email_input.strip():
+            st.session_state.login_error = "⚠️ Please enter your email address."
+            st.rerun()
+        elif not password_input.strip():
+            st.session_state.login_error = "⚠️ Please enter your access password."
+            st.rerun()
+        else:
+            with st.spinner("Verifying credentials..."):
+                user = authenticate(email_input, password_input)
+            if user:
+                st.session_state.user          = user
+                st.session_state.login_error   = ""
+                st.session_state.screen        = "home"
+                st.rerun()
+            else:
+                st.session_state.login_error = (
+                    "❌ Email or password not recognised. "
+                    "Check your details or contact your lecturer."
+                )
+                st.rerun()
+
+    st.markdown('<div class="ias-footer">INSTITUTE OF ACCOUNTING SCIENCE · AI TUTOR · CONFIDENTIAL</div>',
+                unsafe_allow_html=True)
+
+    st.stop()   # Don't render any other screen if not logged in
+
+
+# ── Guard: redirect to login if session lost ──────────────────────────────────
+
+if not st.session_state.get("user"):
+    st.session_state.screen = "login"
+    st.rerun()
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 # SCREEN 1 — Home
 # ══════════════════════════════════════════════════════════════════════════════
 
 if st.session_state.screen == "home":
 
-    st.markdown('<div class="home-title">IAS AI Tutor</div>', unsafe_allow_html=True)
+    render_signout()
 
-    # 2×2 grid then full-width Integrated
-    # CSS targets buttons by column + nth-of-type to apply per-subject gradient borders
+    user = st.session_state.user
+    display_name = user.get("Name", user.get("Email", "Student"))
+    st.markdown(f'<div class="home-title">IAS AI Tutor</div>', unsafe_allow_html=True)
+    st.markdown(
+        f'<div class="user-badge">Signed in as <span>{display_name}</span></div>',
+        unsafe_allow_html=True
+    )
+
     col1, col2 = st.columns(2, gap="medium")
 
     with col1:
@@ -541,6 +726,7 @@ if st.session_state.screen == "home":
 
 elif st.session_state.screen == "tasks":
 
+    render_signout()
     subject = st.session_state.subject
 
     st.markdown('<div class="nav-btn">', unsafe_allow_html=True)
@@ -583,6 +769,7 @@ elif st.session_state.screen == "tasks":
 
 elif st.session_state.screen == "answer":
 
+    render_signout()
     task = st.session_state.task
 
     st.markdown('<div class="nav-btn">', unsafe_allow_html=True)
@@ -629,6 +816,8 @@ elif st.session_state.screen == "answer":
             with st.spinner("Analysing your answer..."):
                 result = grade_answer(scenario, question, answer, custom_prompt)
 
+            logged_email = st.session_state.user.get("Email", "")
+
             st.session_state.result = {
                 "score":      result["score"],
                 "strengths":  ", ".join(result["strengths"]),
@@ -649,6 +838,7 @@ elif st.session_state.screen == "answer":
                     strengths     = ", ".join(result["strengths"]),
                     weaknesses    = ", ".join(result["weaknesses"]),
                     feedback      = result["feedback"],
+                    email         = logged_email,
                 )
             except Exception:
                 pass
@@ -666,6 +856,7 @@ elif st.session_state.screen == "answer":
 
 elif st.session_state.screen == "result":
 
+    render_signout()
     r = st.session_state.result
     score = r["score"]
 
