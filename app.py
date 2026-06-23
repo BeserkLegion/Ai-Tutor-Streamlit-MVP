@@ -40,9 +40,9 @@ st.markdown("""
         transition: opacity 0.15s ease !important;
         box-shadow: none !important;
         text-transform: none !important;
-        padding: 52px 16px !important;
+        padding: 36px 16px !important;
         width: 100% !important;
-        border: 2px solid transparent !important;
+        border: 1.5px solid #444444 !important;
     }
 
     .stButton > button:hover { opacity: 0.8 !important; background: #0d0d0d !important; }
@@ -71,7 +71,7 @@ st.markdown("""
     }
 
     .integrated-btn > div[data-testid="stButton"] > button {
-        padding: 28px 16px !important;
+        padding: 20px 16px !important;
         font-size: 1.3rem !important;
         background:
             linear-gradient(#000, #000) padding-box,
@@ -116,7 +116,7 @@ st.markdown("""
         font-size: 1.8rem;
         font-weight: 600;
         text-align: center;
-        margin: 40px 0 32px 0;
+        margin: 16px 0 16px 0;
         letter-spacing: 0.5px;
     }
 
@@ -125,7 +125,7 @@ st.markdown("""
         color: #888;
         font-size: 0.78rem;
         text-align: center;
-        margin-bottom: 20px;
+        margin-bottom: 12px;
         letter-spacing: 0.3px;
     }
 
@@ -210,8 +210,8 @@ st.markdown("""
         background: transparent !important;
         border: 1px solid #2a2a2a !important;
         color: #555 !important;
-        padding: 6px 14px !important;
-        font-size: 0.75rem !important;
+        padding: 4px 10px !important;
+        font-size: 0.7rem !important;
         font-weight: 400 !important;
         width: auto !important;
         letter-spacing: 0.5px !important;
@@ -698,7 +698,7 @@ if st.session_state.screen == "home":
         if st.button("Manfin", key="btn_manfin", use_container_width=True):
             go_tasks("Manfin")
             st.rerun()
-        st.markdown('<div style="height:14px"></div>', unsafe_allow_html=True)
+        st.markdown('<div style="height:8px"></div>', unsafe_allow_html=True)
         if st.button("Tax", key="btn_tax", use_container_width=True):
             go_tasks("Tax")
             st.rerun()
@@ -707,12 +707,12 @@ if st.session_state.screen == "home":
         if st.button("Audit", key="btn_audit", use_container_width=True):
             go_tasks("Audit")
             st.rerun()
-        st.markdown('<div style="height:14px"></div>', unsafe_allow_html=True)
+        st.markdown('<div style="height:8px"></div>', unsafe_allow_html=True)
         if st.button("Finacc", key="btn_finacc", use_container_width=True):
             go_tasks("Finacc")
             st.rerun()
 
-    st.markdown('<div style="height:14px"></div>', unsafe_allow_html=True)
+    st.markdown('<div style="height:8px"></div>', unsafe_allow_html=True)
     st.markdown('<div class="integrated-btn">', unsafe_allow_html=True)
     if st.button("Integrated", key="btn_integrated", use_container_width=True):
         go_tasks("Integrated")
