@@ -28,56 +28,72 @@ st.markdown("""
 
     header[data-testid="stHeader"] { background: transparent; }
 
-    /* ── Home screen ── */
+    /* ── Shared button reset ── */
+    .stButton > button {
+        background: #000 !important;
+        color: #ffffff !important;
+        border-radius: 4px !important;
+        font-size: 1.3rem !important;
+        font-weight: 400 !important;
+        letter-spacing: 0.3px !important;
+        transition: opacity 0.15s ease !important;
+        box-shadow: none !important;
+        text-transform: none !important;
+        padding: 52px 16px !important;
+        width: 100% !important;
+        /* Gradient border via background-clip trick */
+        border: 2px solid transparent !important;
+    }
+
+    .stButton > button:hover { opacity: 0.8 !important; background: #0d0d0d !important; }
+    .stButton > button:active { opacity: 0.6 !important; }
+    .stButton > button:focus { outline: none !important; box-shadow: none !important; }
+
+    /* ── Per-subject gradient borders ──
+       Streamlit renders buttons in DOM order. On the home screen:
+       col1 row1 = Manfin, col2 row1 = Audit, col1 row2 = Tax, col2 row2 = Finacc
+       We target them using nth-of-type on their parent stButton divs.
+       The Integrated button sits in its own full-width row below. ── */
+
+    /* All home tiles share the background-clip border approach */
+    div[data-testid="column"]:nth-of-type(1) div[data-testid="stButton"]:nth-of-type(1) > button {
+        background:
+            linear-gradient(#000, #000) padding-box,
+            linear-gradient(135deg, #000000 0%, #00cfff 100%) border-box !important;
+    }
+    div[data-testid="column"]:nth-of-type(2) div[data-testid="stButton"]:nth-of-type(1) > button {
+        background:
+            linear-gradient(#000, #000) padding-box,
+            linear-gradient(135deg, #000000 0%, #9b30ff 100%) border-box !important;
+    }
+    div[data-testid="column"]:nth-of-type(1) div[data-testid="stButton"]:nth-of-type(2) > button {
+        background:
+            linear-gradient(#000, #000) padding-box,
+            linear-gradient(135deg, #000000 0%, #ff2dd4 100%) border-box !important;
+    }
+    div[data-testid="column"]:nth-of-type(2) div[data-testid="stButton"]:nth-of-type(2) > button {
+        background:
+            linear-gradient(#000, #000) padding-box,
+            linear-gradient(135deg, #000000 0%, #00e676 100%) border-box !important;
+    }
+
+    /* Integrated — full-width row, smaller vertical padding */
+    .integrated-btn > div[data-testid="stButton"] > button {
+        padding: 28px 16px !important;
+        font-size: 1.3rem !important;
+        background:
+            linear-gradient(#000, #000) padding-box,
+            linear-gradient(90deg, #000000 0%, #1a3aff 100%) border-box !important;
+    }
+
+    /* ── Home title ── */
     .home-title {
         color: #ffffff;
         font-size: 1.8rem;
         font-weight: 600;
         text-align: center;
-        margin: 40px 0 36px 0;
+        margin: 40px 0 32px 0;
         letter-spacing: 0.5px;
-    }
-
-    .subject-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 16px;
-        max-width: 520px;
-        margin: 0 auto 16px auto;
-    }
-
-    .subject-card {
-        background: #000;
-        border-radius: 6px;
-        padding: 40px 20px;
-        text-align: center;
-        cursor: pointer;
-        font-size: 1.3rem;
-        font-weight: 500;
-        color: #ffffff;
-        transition: background 0.2s ease;
-        position: relative;
-    }
-
-    /* Individual border colours matching the mockup */
-    .subject-card.manfin  { border: 2px solid; border-image: linear-gradient(135deg, #00eaff, #7b2fff) 1; }
-    .subject-card.audit   { border: 2px solid; border-image: linear-gradient(135deg, #7b2fff, #00eaff) 1; }
-    .subject-card.tax     { border: 2px solid; border-image: linear-gradient(135deg, #ff00c8, #7b2fff) 1; }
-    .subject-card.finacc  { border: 2px solid; border-image: linear-gradient(135deg, #00ff85, #7b2fff) 1; }
-
-    .subject-card-full {
-        background: #000;
-        border-radius: 6px;
-        padding: 24px 20px;
-        text-align: center;
-        cursor: pointer;
-        font-size: 1.3rem;
-        font-weight: 500;
-        color: #ffffff;
-        max-width: 520px;
-        margin: 0 auto;
-        border: 2px solid;
-        border-image: linear-gradient(90deg, #0040ff, #00eaff) 1;
     }
 
     /* ── Task list screen ── */
@@ -91,43 +107,6 @@ st.markdown("""
         padding: 14px 20px;
         margin: 32px auto 24px auto;
         max-width: 520px;
-    }
-
-    .task-card {
-        background: #000;
-        border-radius: 4px;
-        padding: 18px 20px;
-        margin: 0 auto 12px auto;
-        max-width: 520px;
-        cursor: pointer;
-        border: 1.5px solid transparent;
-        background-clip: padding-box;
-        position: relative;
-        color: #ffffff;
-    }
-
-    .task-card::before {
-        content: "";
-        position: absolute;
-        inset: -1.5px;
-        border-radius: 4px;
-        padding: 1.5px;
-        background: linear-gradient(90deg, #00eaff, #7b2fff);
-        -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-        -webkit-mask-composite: destination-out;
-        mask-composite: exclude;
-        pointer-events: none;
-    }
-
-    .task-card-title {
-        font-size: 1rem;
-        font-weight: 600;
-        margin-bottom: 4px;
-    }
-
-    .task-card-desc {
-        font-size: 0.85rem;
-        color: #aaaaaa;
     }
 
     .more-tasks-note {
@@ -156,6 +135,40 @@ st.markdown("""
         pointer-events: none;
     }
 
+    /* Task list buttons — override the home tile styles */
+    .task-list-btn > div[data-testid="stButton"] > button {
+        background: #000 !important;
+        border: 1.5px solid transparent !important;
+        background-image:
+            linear-gradient(#000, #000),
+            linear-gradient(90deg, #00eaff, #7b2fff) !important;
+        background-origin: border-box !important;
+        background-clip: padding-box, border-box !important;
+        padding: 18px 20px !important;
+        font-size: 0.95rem !important;
+        font-weight: 400 !important;
+        text-align: left !important;
+        line-height: 1.6 !important;
+    }
+
+    /* Back / nav buttons */
+    .nav-btn > div[data-testid="stButton"] > button {
+        background: transparent !important;
+        border: 1px solid #333 !important;
+        color: #888 !important;
+        padding: 8px 16px !important;
+        font-size: 0.85rem !important;
+        font-weight: 400 !important;
+        width: auto !important;
+    }
+
+    .nav-btn > div[data-testid="stButton"] > button:hover {
+        border-color: #555 !important;
+        color: #ccc !important;
+        background: transparent !important;
+        opacity: 1 !important;
+    }
+
     /* ── Answer screen ── */
     .answer-header {
         color: #ffffff;
@@ -178,7 +191,6 @@ st.markdown("""
         margin-bottom: 6px;
     }
 
-    /* Input styling — dark background to match mockup */
     .stTextInput > div > div > input {
         background: #000000 !important;
         color: #ffffff !important;
@@ -222,7 +234,7 @@ st.markdown("""
     }
 
     /* Submit button */
-    .stButton > button {
+    .submit-btn > div[data-testid="stButton"] > button {
         background: #5cb800 !important;
         color: #ffffff !important;
         border: none !important;
@@ -232,24 +244,14 @@ st.markdown("""
         font-size: 0.95rem !important;
         letter-spacing: 1.5px !important;
         text-transform: uppercase !important;
+        width: auto !important;
         display: block !important;
         margin: 0 auto !important;
-        transition: background 0.2s ease !important;
-        box-shadow: none !important;
     }
 
-    .stButton > button:hover {
+    .submit-btn > div[data-testid="stButton"] > button:hover {
         background: #4aa000 !important;
-        transform: none !important;
-    }
-
-    /* Back link */
-    .back-link {
-        color: #888888;
-        font-size: 0.82rem;
-        cursor: pointer;
-        margin-bottom: 8px;
-        display: inline-block;
+        opacity: 1 !important;
     }
 
     /* ── Result cards ── */
@@ -322,6 +324,25 @@ st.markdown("""
     .card-feedback   { border-left: 3px solid #4A9EFF; }
     .card-feedback h4 { color: #4A9EFF; }
 
+    /* Result nav buttons */
+    .result-nav > div[data-testid="stButton"] > button {
+        background: #000 !important;
+        border: 1px solid #333 !important;
+        color: #aaa !important;
+        padding: 10px 16px !important;
+        font-size: 0.88rem !important;
+        font-weight: 400 !important;
+        text-transform: none !important;
+        letter-spacing: 0 !important;
+    }
+
+    .result-nav > div[data-testid="stButton"] > button:hover {
+        border-color: #555 !important;
+        color: #fff !important;
+        background: #0d0d0d !important;
+        opacity: 1 !important;
+    }
+
     /* Footer */
     .ias-footer {
         text-align: center;
@@ -333,10 +354,8 @@ st.markdown("""
         letter-spacing: 1px;
     }
 
-    /* Spinner */
     .stSpinner > div { border-top-color: #5cb800 !important; }
 
-    /* Warning */
     div[data-testid="stAlert"] {
         background: rgba(255,165,0,0.06) !important;
         border: 1px solid rgba(255,165,0,0.25) !important;
@@ -423,7 +442,7 @@ def log_submission(student_id, subject, scenario_id, attempt, score,
 # ── Session state defaults ─────────────────────────────────────────────────────
 
 for key, default in {
-    "screen": "home",       # home | tasks | answer | result
+    "screen": "home",
     "subject": None,
     "task": None,
     "result": None,
@@ -462,14 +481,15 @@ if st.session_state.screen == "home":
 
     st.markdown('<div class="home-title">IAS AI Tutor</div>', unsafe_allow_html=True)
 
-    # 2×2 grid: Manfin | Audit  /  Tax | Finacc
-    col1, col2 = st.columns(2)
+    # 2×2 grid then full-width Integrated
+    # CSS targets buttons by column + nth-of-type to apply per-subject gradient borders
+    col1, col2 = st.columns(2, gap="medium")
 
     with col1:
         if st.button("Manfin", key="btn_manfin", use_container_width=True):
             go_tasks("Manfin")
             st.rerun()
-        st.markdown('<div style="height:8px"></div>', unsafe_allow_html=True)
+        st.markdown('<div style="height:14px"></div>', unsafe_allow_html=True)
         if st.button("Tax", key="btn_tax", use_container_width=True):
             go_tasks("Tax")
             st.rerun()
@@ -478,16 +498,17 @@ if st.session_state.screen == "home":
         if st.button("Audit", key="btn_audit", use_container_width=True):
             go_tasks("Audit")
             st.rerun()
-        st.markdown('<div style="height:8px"></div>', unsafe_allow_html=True)
+        st.markdown('<div style="height:14px"></div>', unsafe_allow_html=True)
         if st.button("Finacc", key="btn_finacc", use_container_width=True):
             go_tasks("Finacc")
             st.rerun()
 
-    # Full-width Integrated below
-    st.markdown('<div style="height:8px"></div>', unsafe_allow_html=True)
+    st.markdown('<div style="height:14px"></div>', unsafe_allow_html=True)
+    st.markdown('<div class="integrated-btn">', unsafe_allow_html=True)
     if st.button("Integrated", key="btn_integrated", use_container_width=True):
         go_tasks("Integrated")
         st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown('<div class="ias-footer">INSTITUTE OF ACCOUNTING SCIENCE · AI TUTOR · CONFIDENTIAL</div>',
                 unsafe_allow_html=True)
@@ -501,9 +522,11 @@ elif st.session_state.screen == "tasks":
 
     subject = st.session_state.subject
 
+    st.markdown('<div class="nav-btn">', unsafe_allow_html=True)
     if st.button("← Back", key="back_home"):
         go_home()
         st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown(f'<div class="screen-title">{subject} — Select your task</div>',
                 unsafe_allow_html=True)
@@ -516,11 +539,13 @@ elif st.session_state.screen == "tasks":
     else:
         for i, task in enumerate(tasks):
             title = task.get("Title", f"Task {i+1}")
-            scenario_preview = str(task.get("Scenario", ""))[:100] + "…"
-            if st.button(f"**{title}**\n\n{scenario_preview}", key=f"task_{i}",
+            scenario_preview = str(task.get("Scenario", ""))[:120] + "…"
+            st.markdown('<div class="task-list-btn">', unsafe_allow_html=True)
+            if st.button(f"{title}\n\n{scenario_preview}", key=f"task_{i}",
                          use_container_width=True):
                 go_answer(task)
                 st.rerun()
+            st.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown(
         '<div class="more-tasks-note">More tasks will be available as time continues</div>',
@@ -539,10 +564,12 @@ elif st.session_state.screen == "answer":
 
     task = st.session_state.task
 
+    st.markdown('<div class="nav-btn">', unsafe_allow_html=True)
     if st.button("← Back to tasks", key="back_tasks"):
         st.session_state.screen = "tasks"
         st.session_state.result = None
         st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
 
     title    = task.get("Title", "Task")
     scenario = task.get("Scenario", "")
@@ -567,7 +594,11 @@ elif st.session_state.screen == "answer":
 
     st.markdown('<div style="height:8px"></div>', unsafe_allow_html=True)
 
-    if st.button("SUBMIT"):
+    st.markdown('<div class="submit-btn">', unsafe_allow_html=True)
+    submit = st.button("SUBMIT")
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    if submit:
         if not student_id.strip():
             st.warning("⚠️ Student Number is required before submitting.")
         elif not answer.strip():
@@ -577,28 +608,28 @@ elif st.session_state.screen == "answer":
                 result = grade_answer(scenario, question, answer)
 
             st.session_state.result = {
-                "score":     result["score"],
-                "strengths": ", ".join(result["strengths"]),
+                "score":      result["score"],
+                "strengths":  ", ".join(result["strengths"]),
                 "weaknesses": ", ".join(result["weaknesses"]),
-                "feedback":  result["feedback"],
+                "feedback":   result["feedback"],
                 "student_id": student_id,
-                "answer":    answer,
+                "answer":     answer,
             }
 
             try:
                 log_submission(
-                    student_id  = student_id,
-                    subject     = st.session_state.subject,
-                    scenario_id = task.get("ScenarioID", ""),
-                    attempt     = 1,
-                    score       = result["score"],
+                    student_id    = student_id,
+                    subject       = st.session_state.subject,
+                    scenario_id   = task.get("ScenarioID", ""),
+                    attempt       = 1,
+                    score         = result["score"],
                     response_text = answer,
-                    strengths   = ", ".join(result["strengths"]),
-                    weaknesses  = ", ".join(result["weaknesses"]),
-                    feedback    = result["feedback"],
+                    strengths     = ", ".join(result["strengths"]),
+                    weaknesses    = ", ".join(result["weaknesses"]),
+                    feedback      = result["feedback"],
                 )
             except Exception:
-                pass  # Don't block result display if logging fails
+                pass
 
             st.session_state.screen = "result"
             st.rerun()
@@ -612,7 +643,7 @@ elif st.session_state.screen == "answer":
 # ══════════════════════════════════════════════════════════════════════════════
 
 elif st.session_state.screen == "result":
-# This is the gradient cheker 
+
     r = st.session_state.result
     score = r["score"]
 
@@ -648,16 +679,18 @@ elif st.session_state.screen == "result":
 
     col1, col2 = st.columns(2)
     with col1:
+        st.markdown('<div class="result-nav">', unsafe_allow_html=True)
         if st.button("Try another task", use_container_width=True):
             st.session_state.screen = "tasks"
             st.session_state.result = None
             st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
     with col2:
+        st.markdown('<div class="result-nav">', unsafe_allow_html=True)
         if st.button("Back to subjects", use_container_width=True):
             go_home()
             st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown('<div class="ias-footer">INSTITUTE OF ACCOUNTING SCIENCE · AI TUTOR · CONFIDENTIAL</div>',
                 unsafe_allow_html=True)
-    
-    #This will be the base app going forward 
