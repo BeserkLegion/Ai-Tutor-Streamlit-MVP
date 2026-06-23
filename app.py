@@ -445,26 +445,17 @@ def get_google_client():
 # ── Auth helpers ───────────────────────────────────────────────────────────────
 
 def hash_password(password: str) -> str:
-    """SHA-256 hash for comparison. Passwords in the sheet should be plain text;
-    this hashes the user's input before comparing to the stored hash.
-    If you store plain text passwords in the sheet, compare directly instead."""
     return hashlib.sha256(password.strip().encode()).hexdigest()
 
 
 @st.cache_data(ttl=300)
 def load_users():
-    """Load the 'AI Tutor Users' sheet.
-    Expected columns: Email | Password | Name | Active
-    Password column should contain SHA-256 hashes (see dev log).
-    Active column: TRUE / FALSE — set FALSE to suspend a user without deleting."""
     gc = get_google_client()
     rows = gc.open("AI Tutor Users").sheet1.get_all_records()
     return rows
 
 
 def authenticate(email: str, password: str):
-    """Returns the user row dict on success, None on failure.
-    Checks: email match (case-insensitive) → Active == TRUE → password hash match."""
     users = load_users()
     email_lower = email.strip().lower()
     pw_hash = hash_password(password)
@@ -477,6 +468,47 @@ def authenticate(email: str, password: str):
             if stored == pw_hash:
                 return user
     return None
+
+
+# ── DEBUG SIDEBAR — remove once login is confirmed working ────────────────────
+
+with st.sidebar:
+    st.markdown("### 🔧 Auth Debug")
+    debug_email = st.text_input("Debug email", key="debug_email")
+    debug_pw    = st.text_input("Debug password", key="debug_pw")
+    if st.button("Run debug check", key="debug_btn"):
+        computed = hash_password(debug_pw)
+        st.code(f"Computed hash ({len(computed)} chars):\n{computed}")
+        try:
+            users = load_users()
+            matched_user = None
+            for u in users:
+                if str(u.get("Email", "")).strip().lower() == debug_email.strip().lower():
+                    matched_user = u
+                    break
+            if matched_user is None:
+                st.error("❌ Email not found in sheet at all.")
+            else:
+                stored = str(matched_user.get("Password", "")).strip()
+                active = str(matched_user.get("Active", "")).strip()
+                st.code(f"Stored hash  ({len(stored)} chars):\n{stored}")
+                st.write(f"**Active field:** `{active}`")
+                st.write(f"**Hashes match:** `{stored == computed}`")
+                if stored != computed:
+                    # Character-by-character diff to find where they diverge
+                    for i, (a, b) in enumerate(zip(stored, computed)):
+                        if a != b:
+                            st.warning(f"First difference at position {i}: sheet=`{a}` computed=`{b}`")
+                            break
+                    if len(stored) != len(computed):
+                        st.warning(f"Length mismatch: sheet={len(stored)}, computed={len(computed)}")
+        except Exception as e:
+            st.error(f"Error reading sheet: {e}")
+    if st.button("Clear cache & reload", key="debug_clear"):
+        st.cache_data.clear()
+        st.success("Cache cleared — rerun the debug check now.")
+
+# ─────────────────────────────────────────────────────────────────────────────
 
 
 # ── Data helpers ───────────────────────────────────────────────────────────────
@@ -560,7 +592,7 @@ for key, default in {
     "subject":       None,
     "task":          None,
     "result":        None,
-    "user":          None,   # dict from users sheet on successful login
+    "user":          None,
     "login_error":   "",
 }.items():
     if key not in st.session_state:
@@ -616,7 +648,6 @@ if st.session_state.screen == "login":
     st.markdown('<div class="login-subtitle">Sign in with your institutional Google account and access password</div>',
                 unsafe_allow_html=True)
 
-    # Centre the form with a narrow column
     _, col, _ = st.columns([1, 3, 1])
     with col:
         st.markdown('<div class="field-label">Google account email</div>', unsafe_allow_html=True)
@@ -663,7 +694,7 @@ if st.session_state.screen == "login":
     st.markdown('<div class="ias-footer">INSTITUTE OF ACCOUNTING SCIENCE · AI TUTOR · CONFIDENTIAL</div>',
                 unsafe_allow_html=True)
 
-    st.stop()   # Don't render any other screen if not logged in
+    st.stop()
 
 
 # ── Guard: redirect to login if session lost ──────────────────────────────────
