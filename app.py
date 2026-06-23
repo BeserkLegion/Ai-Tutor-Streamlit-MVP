@@ -404,7 +404,7 @@ DEFAULT_GRADING_PROMPT = (
     "Grade the student's answer out of 100 based on understanding, analysis, "
     "evidence and recommendations.\n\n"
     "Return ONLY valid JSON with no extra text:\n"
-    '{"score": 0, "strengths": [], "weaknesses": [], "feedback": ""}'
+    '{{"score": 0, "strengths": [], "weaknesses": [], "feedback": ""}}'
 )
 
 
