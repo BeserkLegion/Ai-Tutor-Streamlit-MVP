@@ -1,5 +1,5 @@
 streamlit
 openai
-python-dotenv
+python-docx
 gspread
 oauth2client
