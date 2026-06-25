@@ -1,6 +1,8 @@
 import streamlit as st
 import json
 from datetime import datetime
+from pathlib import Path
+
 from docx import Document
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
@@ -10,9 +12,26 @@ from openai import OpenAI
 # CONFIG
 # ──────────────────────────────────────────────
 
-st.set_page_config(page_title="AI Assessment", layout="centered")
+st.set_page_config(page_title="AI Tutor", layout="centered")
 
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+
+SHEET_NAME = "AI Tutor Results"
+
+SHEET_HEADERS = [
+    "Timestamp",
+    "StudentID",
+    "Email",
+    "Subject",
+    "ScenarioID",
+    "Attempt",
+    "Score",
+    "Response",
+    "Strengths",
+    "Weaknesses",
+]
+
+ASSESSMENT_FILE = Path("current_assessment.docx")
 
 # ──────────────────────────────────────────────
 # GOOGLE SHEETS
@@ -21,98 +40,162 @@ client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 def get_google_client():
     scope = [
         "https://spreadsheets.google.com/feeds",
-        "https://www.googleapis.com/auth/drive"
+        "https://www.googleapis.com/auth/drive",
     ]
-    creds = ServiceAccountCredentials.from_json_keyfile_dict(
-        st.secrets["gcp_service_account"], scope
+
+    credentials = ServiceAccountCredentials.from_json_keyfile_dict(
+        st.secrets["gcp_service_account"],
+        scope,
     )
-    return gspread.authorize(creds)
+
+    return gspread.authorize(credentials)
 
 
-def save_result(student_id, email, subject, scenario_id, score,
-                response, strengths, weaknesses, feedback):
-    """
-    Logs to Google Sheet with columns:
-    Timestamp | StudentID | Email | Subject | ScenarioID | Attempt |
-    Score | Response | Strengths | Weaknesses | Feedback
-    """
+def get_results_sheet():
+    gc = get_google_client()
+    sheet = gc.open(SHEET_NAME).sheet1
+
+    existing_headers = sheet.row_values(1)
+
+    if not existing_headers:
+        sheet.append_row(SHEET_HEADERS)
+    elif existing_headers != SHEET_HEADERS:
+        raise ValueError(
+            "Google Sheet headers must be: "
+            + ", ".join(SHEET_HEADERS)
+        )
+
+    return sheet
+
+
+def get_attempt_number(sheet, student_id, scenario_id):
     try:
-        gc = get_google_client()
-        sheet = gc.open("AI Assessment Results").sheet1
+        records = sheet.get_all_records()
+
+        previous_attempts = [
+            row
+            for row in records
+            if str(row.get("StudentID", "")).strip() == student_id
+            and str(row.get("ScenarioID", "")).strip() == scenario_id
+        ]
+
+        return len(previous_attempts) + 1
+    except Exception:
+        return 1
+
+
+def save_result(
+    student_id,
+    email,
+    subject,
+    scenario_id,
+    score,
+    response,
+    strengths,
+    weaknesses,
+):
+    try:
+        sheet = get_results_sheet()
+        attempt = get_attempt_number(sheet, student_id, scenario_id)
+
         sheet.append_row([
             datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             student_id,
             email,
-            subject,           # defaults to "Assessment" if not provided
-            scenario_id,       # uses the uploaded filename
-            1,                 # Attempt always 1 in this simple app
+            subject,
+            scenario_id,
+            attempt,
             score,
             response,
             strengths,
             weaknesses,
-            feedback
         ])
-    except Exception as e:
-        st.warning(f"Result could not be saved to sheet: {e}")
+    except Exception as error:
+        st.warning(f"Result could not be saved: {error}")
+
 
 # ──────────────────────────────────────────────
 # DOCX PARSER
 # ──────────────────────────────────────────────
 
-def read_docx(uploaded_file):
-    doc = Document(uploaded_file)
-    return "\n".join(p.text for p in doc.paragraphs)
+def read_docx(file_path_or_upload):
+    document = Document(file_path_or_upload)
+    return "\n".join(paragraph.text for paragraph in document.paragraphs)
 
 
 def split_document(content):
-    """
-    Splits the document into two parts using section markers.
+    student_marker = "=== STUDENT SECTION ==="
+    marker_marker = "=== MARKER SECTION ==="
 
-    Expected format:
-      [Any introductory text / scenario / question]
-      === STUDENT SECTION ===
-      [What students see and answer]
-      === MARKER SECTION ===
-      [Grading rubric / prompt instructions — NEVER shown to students]
-    """
-    STUDENT_MARKER = "=== STUDENT SECTION ==="
-    MARKER_MARKER  = "=== MARKER SECTION ==="
+    if student_marker not in content:
+        raise ValueError(
+            "Document is missing the '=== STUDENT SECTION ===' marker."
+        )
 
-    if STUDENT_MARKER not in content:
-        raise ValueError("Document is missing the '=== STUDENT SECTION ===' marker.")
-    if MARKER_MARKER not in content:
-        raise ValueError("Document is missing the '=== MARKER SECTION ===' marker.")
+    if marker_marker not in content:
+        raise ValueError(
+            "Document is missing the '=== MARKER SECTION ===' marker."
+        )
 
-    student_part = content.split(STUDENT_MARKER)[1].split(MARKER_MARKER)[0].strip()
-    marker_part  = content.split(MARKER_MARKER)[1].strip()
+    student_content = content.split(student_marker, 1)[1].split(marker_marker, 1)[0].strip()
+    marker_content = content.split(marker_marker, 1)[1].strip()
 
-    return student_part, marker_part
+    if not student_content:
+        raise ValueError("The STUDENT SECTION is empty.")
+
+    if not marker_content:
+        raise ValueError("The MARKER SECTION is empty.")
+
+    return student_content, marker_content
+
+
+def load_current_assessment():
+    if not ASSESSMENT_FILE.exists():
+        return None, None, None
+
+    try:
+        document_text = read_docx(ASSESSMENT_FILE)
+        student_content, marker_content = split_document(document_text)
+
+        return student_content, marker_content, ASSESSMENT_FILE.name
+
+    except Exception as error:
+        st.error(f"Could not load the current assessment: {error}")
+        return None, None, None
+
 
 # ──────────────────────────────────────────────
 # GRADING
 # ──────────────────────────────────────────────
 
-JSON_INSTRUCTION = (
-    "\n\nIMPORTANT: Return ONLY valid JSON — no markdown, no code fences, no extra text.\n"
-    "The JSON must contain exactly these four keys:\n"
-    "  \"score\"     — percentage mark 0–100 (integer). "
-    "If your rubric is out of a different total, convert to percentage first.\n"
-    "  \"strengths\" — list of strings (what the student did well).\n"
-    "  \"weaknesses\"— list of strings (what needs improvement).\n"
-    "  \"feedback\"  — single string with detailed, criterion-by-criterion feedback.\n\n"
-    "Example:\n"
-    '{"score": 72, "strengths": ["Clear argument"], '
-    '"weaknesses": ["Missing examples"], "feedback": "Good overall but..."}'
-)
+JSON_INSTRUCTION = """
+IMPORTANT: Return ONLY valid JSON.
+
+The JSON must contain exactly these keys:
+"score"      - integer percentage from 0 to 100
+"strengths"  - list of strings
+"weaknesses" - list of strings
+"feedback"   - detailed criterion-by-criterion feedback
+
+Example:
+{
+  "score": 72,
+  "strengths": ["Clear explanation"],
+  "weaknesses": ["Missing legal analysis"],
+  "feedback": "You identified the ethical issue, but..."
+}
+"""
 
 
-def _parse_result(raw: str) -> dict:
-    """Safely parse the model response into the expected dict."""
+def parse_result(raw):
     text = raw.strip()
 
-    # Strip markdown code fences if the model added them anyway
     if text.startswith("```"):
-        lines = [l for l in text.splitlines() if not l.strip().startswith("```")]
+        lines = [
+            line
+            for line in text.splitlines()
+            if not line.strip().startswith("```")
+        ]
         text = "\n".join(lines).strip()
 
     try:
@@ -122,148 +205,195 @@ def _parse_result(raw: str) -> dict:
             "score": 0,
             "strengths": [],
             "weaknesses": [],
-            "feedback": (
-                "The grading engine could not parse a result for this submission. "
-                "Please try again or contact your lecturer."
-            )
+            "feedback": "The grading engine could not produce a valid result.",
         }
 
-    # Normalise score
     try:
         score = float(data.get("score", 0))
     except (TypeError, ValueError):
-        score = 0.0
+        score = 0
+
     data["score"] = max(0, min(100, round(score)))
 
-    # Normalise lists
     for key in ("strengths", "weaknesses"):
         if not isinstance(data.get(key), list):
             data[key] = []
 
-    # Normalise feedback
     if not isinstance(data.get("feedback"), str):
         data["feedback"] = ""
 
     return data
 
 
-def grade_answer(student_content, marker_content, student_answer) -> dict:
-    """
-    Builds the grading prompt from the MARKER SECTION of the uploaded docx,
-    then calls the model and returns a parsed result dict.
+def grade_answer(student_content, marker_content, student_answer):
+    prompt = f"""
+You are an academic marker.
 
-    The marker_content is the full rubric/instructions from the document.
-    It is never shown to the student — only used here as the grading prompt.
-    """
-    prompt = (
-        "You are an academic marker.\n\n"
-        "STUDENT CONTENT (what the student was shown):\n"
-        f"{student_content}\n\n"
-        "MARKING GUIDE (rubric and instructions from the document):\n"
-        f"{marker_content}\n\n"
-        "STUDENT ANSWER:\n"
-        f"{student_answer}"
-        + JSON_INSTRUCTION
+STUDENT CONTENT:
+{student_content}
+
+MARKING GUIDE:
+{marker_content}
+
+STUDENT ANSWER:
+{student_answer}
+
+{JSON_INSTRUCTION}
+"""
+
+    response = client.responses.create(
+        model="gpt-4o",
+        input=prompt,
     )
 
-    response = client.responses.create(model="gpt-4o", input=prompt)
-    return _parse_result(response.output_text.strip())
+    return parse_result(response.output_text)
+
 
 # ──────────────────────────────────────────────
 # SESSION STATE
 # ──────────────────────────────────────────────
 
+if "admin_authenticated" not in st.session_state:
+    st.session_state.admin_authenticated = False
+
 if "result" not in st.session_state:
     st.session_state.result = None
 
+
 # ──────────────────────────────────────────────
-# UI
+# ADMIN UPLOAD
 # ──────────────────────────────────────────────
 
-st.title("AI Assessment System")
+def admin_upload():
+    st.title("Admin Upload")
 
-# ── Document upload ────────────────────────────
+    if not st.session_state.admin_authenticated:
+        password = st.text_input("Admin Password", type="password")
 
-uploaded_doc = st.file_uploader("Upload Assessment Document (.docx)", type=["docx"])
+        if st.button("Log In"):
+            if password == st.secrets["ADMIN_PASSWORD"]:
+                st.session_state.admin_authenticated = True
+                st.rerun()
+            else:
+                st.error("Incorrect admin password.")
 
-if not uploaded_doc:
-    st.info("Please upload an assessment document to begin.")
-    st.stop()
+        return
 
-# Parse the document every time a new file is loaded
-try:
-    document_text = read_docx(uploaded_doc)
-    student_content, marker_content = split_document(document_text)
-except ValueError as e:
-    st.error(str(e))
-    st.stop()
-
-# ── Assessment form ────────────────────────────
-
-st.subheader("Assessment")
-
-# Only the student section is displayed — marker section stays hidden
-st.markdown(student_content)
-
-st.divider()
-
-student_id = st.text_input("Student Number")
-email      = st.text_input("Email (optional)")
-answer     = st.text_area("Your Answer", height=250)
-
-submit = st.button("Submit")
-
-# ── On submit ──────────────────────────────────
-
-if submit:
-    if not student_id.strip():
-        st.warning("Please enter your Student Number before submitting.")
-        st.stop()
-    if not answer.strip():
-        st.warning("Please write your answer before submitting.")
-        st.stop()
-
-    with st.spinner("Marking your answer..."):
-        try:
-            result = grade_answer(student_content, marker_content, answer)
-        except Exception as e:
-            st.error(f"Grading failed: {e}")
-            st.stop()
-
-    st.session_state.result = result
-
-    # Save to Google Sheets — unused fields get sensible defaults
-    save_result(
-        student_id  = student_id.strip(),
-        email       = email.strip(),
-        subject     = "Assessment",          # no subject selector in this app
-        scenario_id = uploaded_doc.name,     # filename acts as ScenarioID
-        score       = result["score"],
-        response    = answer.strip(),
-        strengths   = ", ".join(result["strengths"]),
-        weaknesses  = ", ".join(result["weaknesses"]),
-        feedback    = result["feedback"]
+    uploaded_doc = st.file_uploader(
+        "Upload Assessment Document (.docx)",
+        type=["docx"],
     )
 
-# ── Results ────────────────────────────────────
+    if uploaded_doc:
+        try:
+            document_text = read_docx(uploaded_doc)
+            student_content, marker_content = split_document(document_text)
 
-if st.session_state.result:
-    r = st.session_state.result
+            ASSESSMENT_FILE.write_bytes(uploaded_doc.getvalue())
+
+            st.success("Assessment uploaded successfully.")
+
+            with st.expander("Student Section Preview"):
+                st.markdown(student_content)
+
+            with st.expander("Marker Section Preview"):
+                st.text(marker_content)
+
+        except Exception as error:
+            st.error(f"Upload failed: {error}")
+
+    if st.button("Log Out"):
+        st.session_state.admin_authenticated = False
+        st.rerun()
+
+
+# ──────────────────────────────────────────────
+# STUDENT VIEW
+# ──────────────────────────────────────────────
+
+def student_assessment():
+    st.title("AI Tutor")
+
+    student_content, marker_content, scenario_id = load_current_assessment()
+
+    if not student_content:
+        st.info("No assessment is currently available.")
+        return
+
+    st.subheader("Assessment")
+    st.markdown(student_content)
 
     st.divider()
-    st.subheader("Your Result")
 
-    st.metric("Score", f"{r['score']} / 100")
+    student_id = st.text_input("Student Number")
+    email = st.text_input("Email")
+    answer = st.text_area("Your Answer", height=250)
 
-    st.subheader("Feedback")
-    st.write(r["feedback"])
+    if st.button("Submit Answer", type="primary"):
+        if not student_id.strip():
+            st.warning("Please enter your Student Number.")
+            return
 
-    if r["strengths"]:
-        st.subheader("Strengths")
-        for item in r["strengths"]:
-            st.write(f"• {item}")
+        if not answer.strip():
+            st.warning("Please write your answer.")
+            return
 
-    if r["weaknesses"]:
-        st.subheader("Areas to Improve")
-        for item in r["weaknesses"]:
-            st.write(f"• {item}")
+        with st.spinner("Marking your answer..."):
+            try:
+                result = grade_answer(
+                    student_content=student_content,
+                    marker_content=marker_content,
+                    student_answer=answer.strip(),
+                )
+            except Exception as error:
+                st.error(f"Grading failed: {error}")
+                return
+
+        save_result(
+            student_id=student_id.strip(),
+            email=email.strip(),
+            subject="Assessment",
+            scenario_id=scenario_id,
+            score=result["score"],
+            response=answer.strip(),
+            strengths=" | ".join(result["strengths"]),
+            weaknesses=" | ".join(result["weaknesses"]),
+        )
+
+        st.session_state.result = result
+
+    if st.session_state.result:
+        result = st.session_state.result
+
+        st.divider()
+        st.subheader("Your Result")
+
+        st.metric("Score", f"{result['score']} / 100")
+
+        st.subheader("Feedback")
+        st.write(result["feedback"])
+
+        if result["strengths"]:
+            st.subheader("Strengths")
+            for strength in result["strengths"]:
+                st.write(f"• {strength}")
+
+        if result["weaknesses"]:
+            st.subheader("Areas to Improve")
+            for weakness in result["weaknesses"]:
+                st.write(f"• {weakness}")
+
+
+# ──────────────────────────────────────────────
+# APP NAVIGATION
+# ──────────────────────────────────────────────
+
+page = st.sidebar.radio(
+    "Navigation",
+    ["Student Assessment", "Admin Upload"],
+)
+
+if page == "Admin Upload":
+    admin_upload()
+else:
+    student_assessment()
