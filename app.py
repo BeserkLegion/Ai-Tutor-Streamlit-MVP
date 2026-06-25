@@ -8,10 +8,6 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from openai import OpenAI
 
-# ──────────────────────────────────────────────
-# CONFIG
-# ──────────────────────────────────────────────
-
 st.set_page_config(page_title="AI Tutor", layout="centered")
 
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
@@ -33,9 +29,6 @@ SHEET_HEADERS = [
 
 ASSESSMENT_FILE = Path("current_assessment.docx")
 
-# ──────────────────────────────────────────────
-# GOOGLE SHEETS
-# ──────────────────────────────────────────────
 
 def get_google_client():
     scope = [
@@ -114,10 +107,6 @@ def save_result(
         st.warning(f"Result could not be saved: {error}")
 
 
-# ──────────────────────────────────────────────
-# DOCX PARSER
-# ──────────────────────────────────────────────
-
 def read_docx(file_path_or_upload):
     document = Document(file_path_or_upload)
     return "\n".join(paragraph.text for paragraph in document.paragraphs)
@@ -163,10 +152,6 @@ def load_current_assessment():
         st.error(f"Could not load the current assessment: {error}")
         return None, None, None
 
-
-# ──────────────────────────────────────────────
-# GRADING
-# ──────────────────────────────────────────────
 
 JSON_INSTRUCTION = """
 IMPORTANT: Return ONLY valid JSON.
@@ -249,10 +234,6 @@ STUDENT ANSWER:
     return parse_result(response.output_text)
 
 
-# ──────────────────────────────────────────────
-# SESSION STATE
-# ──────────────────────────────────────────────
-
 if "admin_authenticated" not in st.session_state:
     st.session_state.admin_authenticated = False
 
@@ -260,18 +241,17 @@ if "result" not in st.session_state:
     st.session_state.result = None
 
 
-# ──────────────────────────────────────────────
-# ADMIN UPLOAD
-# ──────────────────────────────────────────────
-
 def admin_upload():
     st.title("Admin Upload")
 
     if not st.session_state.admin_authenticated:
         password = st.text_input("Admin Password", type="password")
+        admin_password = st.secrets.get("ADMIN_PASSWORD", "")
 
         if st.button("Log In"):
-            if password == st.secrets["ADMIN_PASSWORD"]:
+            if not admin_password:
+                st.error("Admin password has not been configured.")
+            elif password == admin_password:
                 st.session_state.admin_authenticated = True
                 st.rerun()
             else:
@@ -306,10 +286,6 @@ def admin_upload():
         st.session_state.admin_authenticated = False
         st.rerun()
 
-
-# ──────────────────────────────────────────────
-# STUDENT VIEW
-# ──────────────────────────────────────────────
 
 def student_assessment():
     st.title("AI Tutor")
@@ -383,10 +359,6 @@ def student_assessment():
             for weakness in result["weaknesses"]:
                 st.write(f"• {weakness}")
 
-
-# ──────────────────────────────────────────────
-# APP NAVIGATION
-# ──────────────────────────────────────────────
 
 page = st.sidebar.radio(
     "Navigation",
