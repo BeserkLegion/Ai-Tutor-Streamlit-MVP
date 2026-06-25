@@ -9,7 +9,9 @@ st.set_page_config(page_title="AI Tutor", layout="centered", initial_sidebar_sta
 st.markdown(
     """
     <style>
-    /* Replace hamburger menu icon with a settings gear */
+    /* Hide Streamlit's auto-generated pages nav */
+    [data-testid="stSidebarNav"] { display: none; }
+    /* Replace hamburger icon with a settings gear */
     [data-testid="collapsedControl"] svg { display: none; }
     [data-testid="collapsedControl"]::after {
         content: "⚙";
