@@ -4,7 +4,22 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 import streamlit as st
 from utils import load_current_assessment, grade_answer, save_result
 
-st.set_page_config(page_title="AI Tutor", layout="centered")
+st.set_page_config(page_title="AI Tutor", layout="centered", initial_sidebar_state="collapsed")
+
+st.markdown(
+    """
+    <style>
+    /* Replace hamburger menu icon with a settings gear */
+    [data-testid="collapsedControl"] svg { display: none; }
+    [data-testid="collapsedControl"]::after {
+        content: "⚙";
+        font-size: 1.4rem;
+        color: inherit;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
 
 # ---------------------------------------------------------------------------
 # Session state defaults
