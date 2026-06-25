@@ -1,15 +1,14 @@
+import sys, os
+sys.path.append(os.path.dirname(os.path.abspath(__file__)).replace("/pages", ""))
+
 import streamlit as st
 from utils import read_docx, split_document, extract_rubric, save_rubric, ASSESSMENT_FILE
 
 st.set_page_config(page_title="Admin Upload", layout="centered")
 
-# ---------------------------------------------------------------------------
-# Block this page from appearing in the sidebar navigation Streamlit generates
-# ---------------------------------------------------------------------------
 st.markdown(
     """
     <style>
-    /* Hide this page's entry in the auto-generated sidebar nav */
     [data-testid="stSidebarNav"] { display: none; }
     </style>
     """,
